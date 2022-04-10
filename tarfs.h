@@ -90,6 +90,7 @@ extern struct inode_operations tarfs_file_iops;
 extern struct inode_operations tarfs_symlink_iops;
 extern struct file_operations tarfs_dir_fops;
 extern struct file_operations tarfs_file_fops;
+extern struct address_space_operations tarfs_aops;
 
 /* Tar library prototypes (defined in proc.c) */
 int tar_create(struct super_block *sb);

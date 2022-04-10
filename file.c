@@ -3,67 +3,59 @@
 #include "tarfs.h"
 
 /*
- * Read a file.
+ * Get a TarFS block.
  */
-ssize_t tarfs_file_read(struct file *file, char __user *userbuf, size_t count, loff_t *pos)
+static int tarfs_get_block(struct inode *inode, sector_t block, struct buffer_head *bh_res, int create)
 {
-  struct inode *inode = file_inode(file);
-  int block_pos, nb_chars, left;
-  struct buffer_head *bh;
-  sector_t block;
-  
-  /* adjust size */
-  if (*pos + count > inode->i_size)
-    count = inode->i_size - *pos;
-  
-  /* no more data to read */
-  if (count <= 0)
+  struct tarfs_inode_info *tarfs_inode = tarfs_i(inode);
+  unsigned long phys;
+
+  /* check block number */
+  if (block * inode->i_sb->s_blocksize > inode->i_size)
     return 0;
-  
-  /* read block by block */
-  for (left = count; left > 0;) {
-    /* compute data block */
-    block = (tarfs_i(inode)->entry->data_off + *pos) / inode->i_sb->s_blocksize;
-    
-    /* read block buffer */
-    bh = sb_bread(inode->i_sb, block);
-    if (!bh)
-      goto out;
-    
-    /* find position and numbers of characters to read */
-    block_pos = *pos % inode->i_sb->s_blocksize;
-    nb_chars = inode->i_sb->s_blocksize - block_pos <= left ? inode->i_sb->s_blocksize - block_pos : left;
-    
-    /* copy to buffer */
-    if (copy_to_user(userbuf, bh->b_data + block_pos, nb_chars)) {
-      brelse(bh);
-      return -EFAULT;
-    }
-    
-    /* release block buffer */
-    brelse(bh);
-    
-    /* update position */
-    *pos += nb_chars;
-    userbuf += nb_chars;
-    left -= nb_chars;
-  }
-  
-out:
-  return count - left;
+
+  /* map result buffer */
+  phys = (tarfs_inode->entry->data_off / inode->i_sb->s_blocksize) + block;
+  map_bh(bh_res, inode->i_sb, phys);
+
+  return 0;
 }
+
+/*
+ * Read full page of a file.
+ */
+static int tarfs_readpage(struct file *file, struct page *page)
+{
+  return block_read_full_page(page, tarfs_get_block);
+}
+
+/*
+ * Get real block number of a block file.
+ */
+static sector_t tarfs_bmap(struct address_space *mapping, sector_t block)
+{
+  return generic_block_bmap(mapping, block, tarfs_get_block);
+}
+
+/*
+ * TarFS file inode operations.
+ */
+struct inode_operations tarfs_file_iops;
 
 /*
  * TarFS file operations.
  */
 struct file_operations tarfs_file_fops = {
   .llseek         = generic_file_llseek,
-  .read           = tarfs_file_read,
+  .read_iter      = generic_file_read_iter,
+  .mmap           = generic_file_mmap,
+  .splice_read    = generic_file_splice_read,
 };
 
 /*
- * TarFS file inode operations.
+ * TarFS address space operations.
  */
-struct inode_operations tarfs_file_iops = {
+struct address_space_operations tarfs_aops = {
+  .readpage       = tarfs_readpage,
+  .bmap           = tarfs_bmap,
 };
-

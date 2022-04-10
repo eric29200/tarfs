@@ -47,11 +47,14 @@ struct inode *tarfs_iget(struct super_block *sb, ino_t ino)
   if (S_ISDIR(inode->i_mode)) {
     inode->i_op = &tarfs_dir_iops;
     inode->i_fop = &tarfs_dir_fops;
+    inode->i_mapping->a_ops = &tarfs_aops;
   } else if (S_ISLNK(inode->i_mode)) {
     inode->i_op = &tarfs_symlink_iops;
+    inode->i_mapping->a_ops = &tarfs_aops;
   } else {
     inode->i_op = &tarfs_file_iops;
     inode->i_fop = &tarfs_file_fops;
+    inode->i_mapping->a_ops = &tarfs_aops;
   }
   
   /* unlock inode */
