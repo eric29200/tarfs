@@ -40,7 +40,9 @@ static sector_t tarfs_bmap(struct address_space *mapping, sector_t block)
 /*
  * TarFS file inode operations.
  */
-struct inode_operations tarfs_file_iops;
+struct inode_operations tarfs_file_iops = {
+  .getattr        = tarfs_getattr,
+};
 
 /*
  * TarFS file operations.

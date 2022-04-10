@@ -99,6 +99,8 @@ void tar_index(struct super_block *sb, struct tar_entry *entry);
 
 /* TarFS inode prototypes (defined in inode.c) */
 struct inode *tarfs_iget(struct super_block *sb, ino_t ino);
+int tarfs_getattr(struct user_namespace *mnt_userns, const struct path *path,
+                  struct kstat *stat, u32 request_mask, unsigned int flags);
 
 /*
  * Get TarFS in memory super block from generic super block.

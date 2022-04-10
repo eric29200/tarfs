@@ -62,3 +62,19 @@ struct inode *tarfs_iget(struct super_block *sb, ino_t ino)
   
   return inode;
 }
+
+/*
+ * Get file attributes.
+ */
+int tarfs_getattr(struct user_namespace *mnt_userns, const struct path *path,
+                  struct kstat *stat, u32 request_mask, unsigned int flags)
+{
+  struct super_block *sb = path->dentry->d_sb;
+  struct inode *inode = d_inode(path->dentry);
+
+  generic_fillattr(&init_user_ns, inode, stat);
+  stat->blocks = inode->i_size / sb->s_blocksize;
+  stat->blksize = sb->s_blocksize;
+
+  return 0;
+}

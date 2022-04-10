@@ -60,6 +60,7 @@ static const char *tarfs_get_link(struct dentry *dentry, struct inode *inode, st
  */
 struct inode_operations tarfs_dir_iops = {
   .lookup         = tarfs_lookup,
+  .getattr        = tarfs_getattr,
 };
 
 /*
@@ -67,4 +68,5 @@ struct inode_operations tarfs_dir_iops = {
  */
 struct inode_operations tarfs_symlink_iops = {
   .get_link       = tarfs_get_link,
+  .getattr        = tarfs_getattr,
 };
